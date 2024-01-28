@@ -1,10 +1,13 @@
 require("./quotes");
 require("./memes");
+require("./room");
+
+const log = new require("simple-node-logger").createSimpleLogger();
 
 const _ROOM_PLAYERS = 4;
+const _PORT = 3005;
+const _PREMATCH_COUNTDOWN = 5;
 
-const express = require("express");
-const app = express();
 const uuid = require("uuid");
 
 const qm = new Quotes();
@@ -15,42 +18,25 @@ mm.loadMemelist();
 
 let roomsData = [];
 
-const fs = require("fs");
-const http2 = require("http2");
-const httpsServer = http2.createSecureServer({
-	app: app,
-	key: fs.readFileSync("certs/privkey.pem"),
-	cert: fs.readFileSync("./certs/cert.pem")
-  });
-
-  
+const app = require("express")();
+const httpServer = require("http").createServer(app);
 const socket = require("socket.io");
-const io = new socket.Server(httpsServer, {
+const io = new socket.Server(httpServer, {
 	cors: {
 		origin: "*"
 	}
 });
 
-class Room {
-
-	constructor(roomID) {
-		this.roomID = roomID;
-		this.usersReady = 0;
-		this.selectionsReady = 0;
-		this.rounds = 0;
-	}
-}
-
-httpsServer.listen(3005);
+httpServer.listen(_PORT, () => log.info("Server listening on port ", _PORT));
 
 app.get("/hello", (req, res) => res.send("<h1>holacarapito</h1>"));
 
-//Predefined event: connect
 io.on("connection", (socket) => {
-	console.log("User connected");
+	log.info("User connected. SID: ", socket.id);
 
 	roomsData.push(new Room("thisisarandomid"));
 
+	//User joins a room and gets his uuid & room uuid
 	socket.on("user-join", (callback) => {
 		let room = Array.from(io.sockets.adapter.rooms).find(room => room.length < _ROOM_PLAYERS);
 		if (!room) {
@@ -58,31 +44,33 @@ io.on("connection", (socket) => {
 		}
 		socket.join(room);
 
+		if (!roomsData.find(x => x.roomID == room[0])) {
+			roomsData.push(new Room(room[0]));
+		}
+
 		let player = {
 			uuid: uuid.v4(),
 			room: room[0]
 		}
-		if (!roomsData.find(x => x.roomID == room[0])) {
-			roomsData.push(new Room(room[0]));
-		}
-		console.log("Player joined room ", room[0]);
+		log.info("Player joined room ", room[0]);
 		callback(player);
 	});
 
-	//Send 4 memes to the user
+	//4 memes are sent to the user
 	socket.on("ask-for-memes", (room, uuid, callback) => {
 		let memeset = mm.getMemeSet(room, uuid);
 		callback(memeset);
 	});
 
+	//All users confirm they've received the memes
 	socket.on("meme-ready", (roomID) => {
 		let room = roomsData.find(x => x.roomID == roomID);
 		if (room) {
 			room.usersReady++;
-			console.log("Meme ready users => ", room.usersReady);
+			log.info("Meme ready users => ", room.usersReady);
 			if (room.usersReady >= _ROOM_PLAYERS) {
 				//Once everyone answered, send quote
-				console.log("Send quote to room: ", roomID);
+				log.warn("Send quote to room: ", roomID);
 				io.in(roomID).emit("get-quote", qm.getRandomQuoteFor(roomID));
 			}
 		}
@@ -102,17 +90,15 @@ io.on("connection", (socket) => {
 
 	//Predefined event: disconnect
 	socket.on("disconnect", () => {
-		console.log("User marico left");
+		log.warn("User left: ", socket.id);
 	});
 });
 
 //Predefined event: join-room
 io.of("/").adapter.on("join-room", (room) => {
-	if (room.size) {
-		console.log("Room players => ", room.size);
+	if (room && room.size == _ROOM_PLAYERS) {
+		log.info("Room players => ", room.size);
+		log.warn("Room ", room, "is ready... starting game");
+		io.in(room).emit("room-ready", { countdown: _PREMATCH_COUNTDOWN });
 	}
-		if (room && room.size == _ROOM_PLAYERS) {
-			console.log("Room ", room, "is ready... starting game");
-			io.in(room).emit("room-ready", { countdown: 5 });
-		}
 })

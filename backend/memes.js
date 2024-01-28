@@ -44,14 +44,16 @@ class Memes {
 
 		for (let i = 0; i < 4; i++) {
 			let memeRef = this.getRandomMemeFor(roomID, playerID);
-			let path = "./memes/" + memeRef.path;
-			log.info("meme path => ", path);
-			let data = fs.readFileSync(path);
-			let srcContent = "data:image/png;base64," + data.toString("base64");
-			memeset.push({
-				id: memeRef.id,
-				src: srcContent
-			});
+			if (memeRef) {
+				let path = "./memes/" + memeRef.path;
+				log.info("meme path => ", path);
+				let data = fs.readFileSync(path);
+				let srcContent = "data:image/png;base64," + data.toString("base64");
+				memeset.push({
+					id: memeRef.id,
+					src: srcContent
+				});
+			}
 
 		}
 		log.info("Fullfilled memeset for: ( " + roomID + " : " + playerID + " )");

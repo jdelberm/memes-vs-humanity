@@ -1,5 +1,18 @@
 {
   "dependencies": {
-    "socket.io": "^4.7.4"
-  }
+    "express": "^4.18.2",
+    "socket.io": "^4.7.4",
+    "sqlite3": "^5.1.7",
+    "underscore": "^1.13.6",
+    "uuid": "^9.0.1"
+  },
+  "name": "backend",
+  "version": "1.0.0",
+  "main": "memeserver.js",
+  "scripts": {
+    "test": "node memeserver.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": ""
 }

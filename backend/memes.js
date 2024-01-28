@@ -1,4 +1,5 @@
-const { log } = require("console");
+const log = new require("simple-node-logger").createSimpleLogger();
+const { getRandomValues } = require("crypto");
 const { response } = require("express");
 const fs = require("fs");
 const _ = require("underscore");
@@ -20,7 +21,12 @@ class Memes {
 			this.alreadyShown[room][player] = new Set();
 		}
 		const seenMemes = this.alreadyShown[room][player];
-		let meme = _.difference(this.memeList, Array.from(seenMemes))[0];
+		let availableMemes = _.difference(this.memeList, Array.from(seenMemes));
+		const amLength = availableMemes.length;
+
+		//Randomize the choosen meme
+		let index = Math.trunc(Math.random() * amLength);
+		let meme = availableMemes[index];
 		if (meme) {
 			seenMemes.add(meme);
 		}
@@ -28,25 +34,27 @@ class Memes {
 			//undefined
 			meme = ""
 		}
-		console.log("result meme => ", meme);
+		log.info("result meme => ", meme);
 		return meme;
 	}
 
 	getMemeSet(roomID, playerID) {
-		console.log("Creating memeset for player: ", playerID);
+		log.info("Creating memeset for player: ", playerID);
 		let memeset = [];
 
 		for (let i = 0; i < 4; i++) {
 			let memeRef = this.getRandomMemeFor(roomID, playerID);
-			console.log("memeRef => ", memeRef);
 			let path = "./memes/" + memeRef.path;
-			console.log("Recovered path => ", path);
+			log.info("meme path => ", path);
 			let data = fs.readFileSync(path);
 			let srcContent = "data:image/png;base64," + data.toString("base64");
-			memeset.push(memeRef.id, srcContent);
+			memeset.push({
+				id: memeRef.id,
+				src: srcContent
+			});
 
 		}
-		console.log("Fullfilled memeset => ", memeset);
+		log.info("Fullfilled memeset for: ( " + roomID + " : " + playerID + " )");
 		return memeset;
 	}
 

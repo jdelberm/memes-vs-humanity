@@ -21,7 +21,11 @@ class Quotes {
 		}
 
 		const seenQuotes = room.shown;
-		let quote = _.difference(this.quotesData, Array.from(seenQuotes))[0];
+		let quotes = _.difference(this.quotesData, Array.from(seenQuotes));
+		const quotesLength = quotes.length;
+
+		const index = Math.trunc(Math.random() * quotesLength);
+		let quote = quotes[index];
 		if (quote) {
 			seenQuotes.add(quote);
 		}

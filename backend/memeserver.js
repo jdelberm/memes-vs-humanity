@@ -8,6 +8,9 @@ const _ROOM_PLAYERS = 4;
 const _PORT = 3005;
 const _PREMATCH_COUNTDOWN = 5;
 
+const express = require("express");
+const http = require("http");
+const socket = require("socket.io");
 const uuid = require("uuid");
 
 const qm = new Quotes();
@@ -18,9 +21,8 @@ mm.loadMemelist();
 
 let roomsData = [];
 
-const app = require("express")();
-const httpServer = require("http").createServer(app);
-const socket = require("socket.io");
+const app = express();
+const httpServer = http.createServer(app);
 const io = new socket.Server(httpServer, {
 	cors: {
 		origin: "*"
@@ -57,8 +59,9 @@ io.on("connection", (socket) => {
 	});
 
 	//4 memes are sent to the user
-	socket.on("ask-for-memes", (room, uuid, callback) => {
-		let memeset = mm.getMemeSet(room, uuid);
+	socket.on("ask-for-memes", (player, callback) => {
+		let memeset = mm.getMemeSet(player.roomId, player.userId);
+		console.log(memeset);
 		callback(memeset);
 	});
 
@@ -96,9 +99,10 @@ io.on("connection", (socket) => {
 
 //Predefined event: join-room
 io.of("/").adapter.on("join-room", (room) => {
-	if (room && room.size == _ROOM_PLAYERS) {
+	//if (room && room.size == _ROOM_PLAYERS) {
+	if (room && room.size == 1) {
 		log.info("Room players => ", room.size);
 		log.warn("Room ", room, "is ready... starting game");
-		io.in(room).emit("room-ready", { countdown: _PREMATCH_COUNTDOWN });
+		io.in(room).emit("room-ready", _PREMATCH_COUNTDOWN);
 	}
 })

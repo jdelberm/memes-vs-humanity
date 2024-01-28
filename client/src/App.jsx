@@ -8,16 +8,53 @@ import Board from './pages/Board';
 export default function App() {
 
     const [loading, setLoading] = useState(false);
+	const [displayBoard, setDisplayBoard] = useState(false);
+	// const [countdownReady, setCountdownReady] = useState(false);
+	// const [counter, setCounter] = useState(0);
+	const [cards, setCards] = useState([]);
 
-  socket.on("connect", () => {
-    console.log(socket.connected);
-  })
+	const setLoadingFn = (status) => {
+		setLoading(status);
+	}
 
-  return (
+	socket.on("room-ready", (countdown) => {
+		//displayCountdown(countdown);
+		const userInfo = {
+			userId: sessionStorage.getItem("userId"),
+			roomId: sessionStorage.getItem("roomId"),
+		}
+		socket.emit("ask-for-memes", userInfo, (res) => {
+			assign_meme_cards(res);
+			socket.emit("meme-ready", userInfo.roomId);
+		});
+	})
+
+	const assign_meme_cards = (memesArray) => {
+		console.log(memesArray);
+		setCards(prevCards => [...prevCards, ...memesArray]);
+		setLoading(false);
+		setDisplayBoard(true);
+	}
+	
+	
+	// const displayCountdown = (countdown) => {
+	// 	setCountdownReady(true);
+	// 	setCounter(countdown.countdown);
+	// }
+	
+	// const updateCounter = () => {
+	// 	if (counter == 0)
+	// 	{
+	// 		clearInterval(interval);
+	// 		setCountdownReady(false);
+	// 	}
+	// 	else
+	// 	setCounter(counter - 1);
+	// }
+	// const interval = setInterval(updateCounter, 1000);
+return (
     <div className="App">
-      <LoginForm onSubmit={setLoading}/>
-      <Loading isLoading={loading}/>
-      <Board/>
+      {loading ? <Loading /> : displayBoard ? <Board cardsArray={cards}/> :  <LoginForm onSubmit={setLoadingFn}/>}
     </div>
   );
 }

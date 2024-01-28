@@ -1,8 +1,8 @@
-import {useState, useRef} from "react";
+import {useRef} from "react";
 import {Form, Button} from "react-bootstrap";
 import { socket } from "../socket";
 
-const LoginForm = ({onSubmit}) => {
+const LoginForm = ({onSubmit, setBoardInfo}) => {
     const usernameRef = useRef("");
     const userInfo = {
         userId: sessionStorage.getItem("userId"),
@@ -19,13 +19,21 @@ const LoginForm = ({onSubmit}) => {
         socket.connect();
         console.log(socket.connected);
         onJoinRoom();
-        onSubmit(false);
     }
 
+	const disconnect = (e) => {
+		e.preventDefault();
+		socket.disconnect();
+		sessionStorage.removeItem("roomId");
+		sessionStorage.removeItem("userId");
+		onSubmit();
+	}
+
     const onJoinRoom = () => {
-        socket.emmit("user-join", (res) => {
+		console.log(userInfo.username);
+        socket.emit("user-join", (res) => {
             sessionStorage.setItem("roomId", res.room);
-            sessionStorage.setItem("userId", res.userId);
+            sessionStorage.setItem("userId", res.uuid);
             sessionStorage.setItem("username", userInfo.username);
         });
     }
@@ -41,8 +49,11 @@ const LoginForm = ({onSubmit}) => {
                 <Form.Group className="mb-3" controlId="formBasicEmail">
                     <Form.Control placeholder="Enter your player name" ref={usernameRef}/>
                 </Form.Group>
-                <Button variant="primary" type="submit" onSubmit={() => connect(e)}>
+                <Button variant="primary" onClick={(e) => connect(e)}>
                     Join Room
+                </Button>
+				<Button variant="secondary" onClick={(e) => disconnect(e)}>
+                    Leave Room
                 </Button>
             </Form>
         </div>

@@ -15,7 +15,7 @@
 	box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
   }
   
-  .show-card .flip-card-inner {
+  .flip-card:hover .flip-card-inner {
 	transform: rotateY(180deg);
   }
   
@@ -36,4 +36,9 @@
 	background-color: #2980b9;
 	color: white;
 	transform: rotateY(180deg);
+  }
+
+  .meme-card {
+	width: 100%;
+	height: 100%;
   }

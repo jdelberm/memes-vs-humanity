@@ -1,15 +1,15 @@
 import React from 'react';
+import '../../styles/CardComponent.css'
 
 function CardComponent({imgSrc, imgId}) {
-
 	return (
-		<div class="flip-card">
-			<div class="flip-card-inner">
-				<div class="flip-card-front">
-					<img src="card_bg.png" alt="card_bg" style="width:300px;height:300px;"/>
+		<div className="flip-card">
+			<div className="flip-card-inner">
+				<div className="flip-card-front">
+					<img src="card_bg.png" alt="card_bg" style={{width:"300px", height:"300px"}}/>
 				</div>
-				<div class="flip-card-back">
-                    <img src={imgSrc} alt="Just a funny meme image" id={imgId}/>
+				<div className="flip-card-back">
+                    <img src={imgSrc} alt="Just a funny meme image" id={imgId} className='meme-card'/>
 				</div>
 			</div>
 		</div>

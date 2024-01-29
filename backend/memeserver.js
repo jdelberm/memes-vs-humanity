@@ -1,3 +1,13 @@
+/**
+ * Why to use custom room names?
+ * Because when client B connects, socket B creates his own room by default.
+ * These rooms are eligible for a game to be hosted in, and socket B can belong 
+ * to socket A room and his own. If then socket C connects but
+ * socket B current room is fullfilled, socket C will join socket B room, in
+ * which socket B is already (because it's his own room), 
+ * creating a duplicate room participation.
+ */
+
 require("./quotes");
 require("./memes");
 require("./game");
@@ -55,7 +65,7 @@ io.on("connection", (socket) => {
 
 	//User joins a room and gets his uuid & room uuid
 	socket.on("user-join", (callback) => {
-		let room = Array.from(io.sockets.adapter.rooms).find(room => room.size < _GAME_PLAYERS);
+		let room = Array.from(io.sockets.adapter.rooms).find(room => room.size? room.size < _GAME_PLAYERS : true);
 		if (!room) {
 			log.info("There isn't any available room");
 			room = uuid.v4();
@@ -70,7 +80,7 @@ io.on("connection", (socket) => {
 			uuid: uuid.v4(),
 			room: room[0]
 		}
-		callback(player);
+		//callback(player);
 	});
 
 	//4 memes are sent to the user

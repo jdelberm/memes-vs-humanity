@@ -38,7 +38,8 @@ io.on("connection", (socket) => {
 
 	//User joins a room and gets his uuid & room uuid
 	socket.on("user-join", (callback) => {
-		let room = Array.from(io.sockets.adapter.rooms).find(room => room.length < _ROOM_PLAYERS);
+		let room = Array.from(io.sockets.adapter.rooms).find(room => room.length < _GAME_PLAYERS);
+		log.info(room? "Room found (${room.length / ${_GAME_PLAYERS} players}). ID: ${room[0]}" : "There isn't any available room");
 		if (!room) {
 			room = uuid.v4();
 		}
@@ -59,7 +60,7 @@ io.on("connection", (socket) => {
 	//4 memes are sent to the user
 	socket.on("ask-for-memes", (player, callback) => {
 		let memeset = mm.getMemeSet(player.roomId, player.userId);
-		console.log(memeset);
+		log.info("Sending memeset to player ${player}");
 		callback(memeset);
 	});
 
@@ -68,10 +69,10 @@ io.on("connection", (socket) => {
 		let game = games.find(x => x.roomID == roomID);
 		if (game) {
 			game.usersReady++;
-			log.info("Meme ready users => ", game.usersReady);
-			if (game.usersReady >= _ROOM_PLAYERS) {
+			log.info("Users with memeset fully loaded => ${game.usersReady} / ${_GAME_PLAYERS}");
+			if (game.usersReady >= _GAME_PLAYERS) {
 				//Once everyone answered, send quote
-				log.warn("Send quote to room: ", roomID);
+				log.warn("Sending quote to room: ", roomID);
 				io.in(roomID).emit("get-quote", qm.getRandomQuoteFor(roomID));
 			}
 		}
@@ -97,9 +98,8 @@ io.on("connection", (socket) => {
 
 //Predefined event: join-room
 io.of("/").adapter.on("join-room", (room) => {
-	//if (room && room.size == _ROOM_PLAYERS) {
-	if (room && room.size == 1) {
-		log.info("Room players => ", room.size);
+	log.info("Room players => ", room?.size);
+	if (room && room.size == _GAME_PLAYERS) {
 		log.warn("Room ", room, "is ready... starting game");
 		io.in(room).emit("room-ready", _PREMATCH_COUNTDOWN);
 	}

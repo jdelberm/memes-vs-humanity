@@ -2,6 +2,7 @@ require("./quotes");
 require("./memes");
 require("./game");
 
+process.title = "memeserver";
 
 const _GAME_PLAYERS = 4;
 const _PORT = 3005;

@@ -10,7 +10,9 @@
   "version": "1.0.0",
   "main": "memeserver.js",
   "scripts": {
-    "test": "node memeserver.js"
+    "start": "node memeserver.js",
+	"stop": "pkill --signal SIGINT memeserver",
+    "restart": "npm stop && npm start"
   },
   "author": "",
   "license": "ISC",

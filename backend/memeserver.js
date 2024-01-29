@@ -70,7 +70,6 @@ io.on("connection", (socket) => {
 			uuid: uuid.v4(),
 			room: room[0]
 		}
-		log.info("Player joined room ", room[0]);
 		callback(player);
 	});
 

@@ -36,8 +36,6 @@ app.get("/hello", (req, res) => res.send("<h1>holacarapito</h1>"));
 io.on("connection", (socket) => {
 	log.info("User connected. SID: ", socket.id);
 
-	games.push(new Room("thisisarandomid"));
-
 	//User joins a room and gets his uuid & room uuid
 	socket.on("user-join", (callback) => {
 		let room = Array.from(io.sockets.adapter.rooms).find(room => room.length < _ROOM_PLAYERS);

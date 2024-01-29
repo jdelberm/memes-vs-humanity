@@ -1,7 +1,10 @@
-class Game{
-	players = new Map();
+class Game {
 
-	constructor(room){
-		this.players.set(room) = 
+	constructor(roomID) {
+		this.roomID = roomID;
+		this.usersReady = 0;
+		this.selectionsReady = 0;
+		this.rounds = 0;
 	}
 }
+global.Game = Game;

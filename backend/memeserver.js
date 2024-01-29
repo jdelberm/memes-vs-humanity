@@ -1,10 +1,10 @@
 require("./quotes");
 require("./memes");
-require("./room");
+require("./game");
 
 const log = new require("simple-node-logger").createSimpleLogger();
 
-const _ROOM_PLAYERS = 4;
+const _GAME_PLAYERS = 4;
 const _PORT = 3005;
 const _PREMATCH_COUNTDOWN = 5;
 
@@ -19,7 +19,7 @@ qm.loadQuotes();
 const mm = new Memes();
 mm.loadMemelist();
 
-let roomsData = [];
+let games = [];
 
 const app = express();
 const httpServer = http.createServer(app);
@@ -36,7 +36,7 @@ app.get("/hello", (req, res) => res.send("<h1>holacarapito</h1>"));
 io.on("connection", (socket) => {
 	log.info("User connected. SID: ", socket.id);
 
-	roomsData.push(new Room("thisisarandomid"));
+	games.push(new Room("thisisarandomid"));
 
 	//User joins a room and gets his uuid & room uuid
 	socket.on("user-join", (callback) => {
@@ -46,8 +46,8 @@ io.on("connection", (socket) => {
 		}
 		socket.join(room);
 
-		if (!roomsData.find(x => x.roomID == room[0])) {
-			roomsData.push(new Room(room[0]));
+		if (!games.find(x => x.roomID == room[0])) {
+			games.push(new Game(room[0]));
 		}
 
 		let player = {
@@ -67,11 +67,11 @@ io.on("connection", (socket) => {
 
 	//All users confirm they've received the memes
 	socket.on("meme-ready", (roomID) => {
-		let room = roomsData.find(x => x.roomID == roomID);
-		if (room) {
-			room.usersReady++;
-			log.info("Meme ready users => ", room.usersReady);
-			if (room.usersReady >= _ROOM_PLAYERS) {
+		let game = games.find(x => x.roomID == roomID);
+		if (game) {
+			game.usersReady++;
+			log.info("Meme ready users => ", game.usersReady);
+			if (game.usersReady >= _ROOM_PLAYERS) {
 				//Once everyone answered, send quote
 				log.warn("Send quote to room: ", roomID);
 				io.in(roomID).emit("get-quote", qm.getRandomQuoteFor(roomID));
@@ -81,9 +81,9 @@ io.on("connection", (socket) => {
 
 	//Proccess user selection
 	socket.on("select-meme", (roomID, playerID, memeID) => {
-		let room = roomSet.find(x => x.roomID == roomID);
-		room.selectionReady++;
-		if (room.selectionReady == _ROOM_PLAYERS) {
+		let game = games.find(x => x.roomID == roomID);
+		game.selectionReady++;
+		if (game.selectionReady == _GAME_PLAYERS) {
 
 		}
 	});

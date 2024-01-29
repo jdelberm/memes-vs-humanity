@@ -1,8 +1,8 @@
 require("./quotes");
 require("./memes");
 require("./game");
+require("./context_logger");
 
-const log = new require("simple-node-logger").createSimpleLogger();
 
 const _GAME_PLAYERS = 4;
 const _PORT = 3005;
@@ -12,6 +12,7 @@ const express = require("express");
 const http = require("http");
 const socket = require("socket.io");
 const uuid = require("uuid");
+const log = new ContextLogger();
 
 const qm = new Quotes();
 qm.loadQuotes();
@@ -29,17 +30,20 @@ const io = new socket.Server(httpServer, {
 	}
 });
 
+log.setContext("init");
 httpServer.listen(_PORT, () => log.info("Server listening on port ", _PORT));
 
 app.get("/hello", (req, res) => res.send("<h1>holacarapito</h1>"));
 
 io.on("connection", (socket) => {
+	log.eventContext = "connection";
+	
 	log.info("User connected. SID: ", socket.id);
 
 	//User joins a room and gets his uuid & room uuid
 	socket.on("user-join", (callback) => {
 		let room = Array.from(io.sockets.adapter.rooms).find(room => room.length < _GAME_PLAYERS);
-		log.info(room? "Room found (${room.length / ${_GAME_PLAYERS} players}). ID: ${room[0]}" : "There isn't any available room");
+		log.info(room? `Room found (${room.length} / ${_GAME_PLAYERS} players}). ID: ${room[0]}` : "There isn't any available room");
 		if (!room) {
 			room = uuid.v4();
 		}
@@ -59,20 +63,26 @@ io.on("connection", (socket) => {
 
 	//4 memes are sent to the user
 	socket.on("ask-for-memes", (player, callback) => {
+		log.eventContext = "ask-for-memes";
+
 		let memeset = mm.getMemeSet(player.roomId, player.userId);
-		log.info("Sending memeset to player ${player}");
+		log.info(`Sending memeset to player ${player}`);
 		callback(memeset);
 	});
 
 	//All users confirm they've received the memes
 	socket.on("meme-ready", (roomID) => {
+		log.eventContext = "meme-ready";
+
 		let game = games.find(x => x.roomID == roomID);
 		if (game) {
 			game.usersReady++;
-			log.info("Users with memeset fully loaded => ${game.usersReady} / ${_GAME_PLAYERS}");
+
+			log.info(`Users with memeset fully loaded => ${game.usersReady} / ${_GAME_PLAYERS}`);
+			
 			if (game.usersReady >= _GAME_PLAYERS) {
 				//Once everyone answered, send quote
-				log.warn("Sending quote to room: ", roomID);
+				log.warn(`Sending quote to room: ${roomID}`);
 				io.in(roomID).emit("get-quote", qm.getRandomQuoteFor(roomID));
 			}
 		}
@@ -92,15 +102,21 @@ io.on("connection", (socket) => {
 
 	//Predefined event: disconnect
 	socket.on("disconnect", () => {
+		log.setContext("disconnect");
+
 		log.warn("User left: ", socket.id);
 	});
 });
 
 //Predefined event: join-room
 io.of("/").adapter.on("join-room", (room) => {
+	log.setContext("join-room");
+
 	log.info("Room players => ", room?.size);
 	if (room && room.size == _GAME_PLAYERS) {
+
 		log.warn("Room ", room, "is ready... starting game");
+
 		io.in(room).emit("room-ready", _PREMATCH_COUNTDOWN);
 	}
 })

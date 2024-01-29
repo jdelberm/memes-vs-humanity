@@ -87,14 +87,34 @@ io.on("connection", (socket) => {
 	//Proccess user selection
 	socket.on("select-meme", (roomID, playerID, memeID) => {
 		let game = games.find(x => x.roomID == roomID);
-		game.selectionReady++;
-		if (game.selectionReady == _GAME_PLAYERS) {
-
+		game.playerSelection = {
+			player: playerID,
+			selection: memeID
+		}
+		//Once all players made a selection, return the selection & score
+		if (game.playerSelection.length == _GAME_PLAYERS) {
+			let memesIDs = game.playerSelection.map((x) => x.id);
+			let choosenMemes = mm.getMemesByIDs(memesIDs);
+			io.in(game.roomID).emit("display-selection", game.playerSelection, choosenMemes);
 		}
 	});
 
-	//Calculate the winner
-	socket.on("vote-meme", () => { });
+	//Once everyone received the selection, send the score
+	socket.on("selection-ready", (roomID) => {
+		let game = games.find(x => x.roomID == roomID);
+		let results = game.playerSelection.map(sel => {
+			return {
+				memeID: sel.id,
+				score: 0
+			}
+		});
+		game.playerSelection.foreach((sel) => {
+			results.get(sel).score++;
+		})
+		game.reset();
+		game.rounds++;
+		io.in(game.roomID).emit("display-score", results);
+	})
 
 	//Predefined event: disconnect
 	socket.on("disconnect", () => {

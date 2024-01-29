@@ -9,7 +9,9 @@ const _PORT = 3005;
 const _PREMATCH_COUNTDOWN = 5;
 
 const express = require("express");
+const https = require("https");
 const http = require("http");
+const { readFileSync } = require("fs");
 const socket = require("socket.io");
 const uuid = require("uuid");
 
@@ -26,7 +28,17 @@ mm.loadMemelist();
 let games = [];
 
 const app = express();
+/*
+const httpsServer = https.createServer (
+	{
+	key: readFileSync("./cert/mvh.jdevops.eu.key"),
+	cert: readFileSync("./cert/mvh.jdevops.eu.crt")
+	},
+	app
+);*/
+
 const httpServer = http.createServer(app);
+
 const io = new socket.Server(httpServer, {
 	cors: {
 		origin: "*"

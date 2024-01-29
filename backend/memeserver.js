@@ -65,12 +65,13 @@ io.on("connection", (socket) => {
 
 	//User joins a room and gets his uuid & room uuid
 	socket.on("user-join", (callback) => {
-		let room = Array.from(io.sockets.adapter.rooms).find(room => room.size? room.size < _GAME_PLAYERS : true);
+		let room = Array.from(io.sockets.adapter.rooms).find(room => room[1].size? room[1].size < _GAME_PLAYERS : true);
 		if (!room) {
 			log.info("There isn't any available room");
 			room = uuid.v4();
 		}
 		socket.join(room);
+		console.log(room);
 
 		if (!games.find(x => x.roomID == room[0])) {
 			games.push(new Game(room[0]));

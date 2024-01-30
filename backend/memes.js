@@ -69,11 +69,12 @@ class Memes {
 	//Returns memes identified by their ID
 	getMemesByIDs(memesIDs) {
 		let memeset = [];
-
+		console.log(memesIDs);
 		memesIDs.forEach((memeID) => {
-			let memeRef = this.memeList[memeID];
+			let memeRef = this.memeList.find((m) => m.id == memeID);
 			memeset.push(this.getMeme(memeRef));
 		})
+		return memeset;
 	}
 }
 

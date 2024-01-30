@@ -65,10 +65,10 @@ io.on("connection", (socket) => {
 
 	//User joins a room and gets his uuid & room uuid
 	socket.on("user-join", (callback) => {
-		let room = Array.from(io.sockets.adapter.rooms).find(room => room[1].size? room[1].size < _GAME_PLAYERS : true);
+		let room = Array.from(io.sockets.adapter.rooms).find(room => room[1].size ? room[1].size < _GAME_PLAYERS : true);
 		if (!room) {
 			log.info("There isn't any available room");
-			room = uuid.v4();
+			roomID = uuid.v4();
 		}
 		socket.join(room);
 		console.log(room);
@@ -79,16 +79,17 @@ io.on("connection", (socket) => {
 
 		let player = {
 			uuid: uuid.v4(),
-			room: room[0]
+			roomID: room[0]
 		}
-		//callback(player);
+		callback(player);
 	});
 
 	//4 memes are sent to the user
-	socket.on("ask-for-memes", (player, callback) => {
+	socket.on("ask-for-memes", (player) => {
+		console.log("player ", player);
 		let memeset = mm.getMemeSet(player.roomId, player.userId);
 		log.info(`Sending memeset to player ${player}`);
-		callback(memeset);
+		socket.emit("proccess-meme", memeset);
 	});
 
 	//All users confirm they've received the memes
@@ -108,35 +109,47 @@ io.on("connection", (socket) => {
 	});
 
 	//Proccess user selection
-	socket.on("select-meme", (roomID, playerID, memeID) => {
-		let game = games.find(x => x.roomID == roomID);
-		game.playerSelection = {
-			player: playerID,
-			selection: memeID
-		}
+	socket.on("select-meme", (player, memeID) => {
+		let game = games.find(x => x.roomID == player.roomID);
+		game.playersSelection.push({
+			player: player.uuid,
+			memeID: memeID
+		});
+		log.info(`Selection received: ${game.playersSelection.length} of ${_GAME_PLAYERS} players have an answer`);
 		//Once all players made a selection, return the selection & score
-		if (game.playerSelection.length == _GAME_PLAYERS) {
-			let memesIDs = game.playerSelection.map((x) => x.id);
-			let choosenMemes = mm.getMemesByIDs(memesIDs);
-			io.in(game.roomID).emit("display-selection", game.playerSelection, choosenMemes);
+		if (game.playersSelection.length == _GAME_PLAYERS) {
+			console.log("Players selection", game.playersSelection);
+			let memesIDs = game.playersSelection.map((x) => x.memeID);
+			let chosenMemes = mm.getMemesByIDs(memesIDs);
+			log.info("Sending players selection so everybody can see it");
+			io.in(game.roomID).emit("display-selection", game.playersSelection, chosenMemes);
 		}
 	});
 
 	//Once everyone received the selection, send the score
-	socket.on("selection-ready", (roomID) => {
-		let game = games.find(x => x.roomID == roomID);
-		let results = game.playerSelection.map(sel => {
-			return {
-				memeID: sel.id,
-				score: 0
-			}
+	socket.on("vote-meme", (player, memeID) => {
+		let game = games.find(x => x.roomID == player.roomID);
+		game.playersVote.push({
+			player: player.uuid,
+			memeID: memeID
 		});
-		game.playerSelection.foreach((sel) => {
-			results.get(sel).score++;
-		})
-		game.reset();
-		game.rounds++;
-		io.in(game.roomID).emit("display-score", results);
+		log.info(`Vote received: ${game.playersVote.length} of ${_GAME_PLAYERS} players have voted`);
+		if (game.playersVote.length == _GAME_PLAYERS) {
+			let results = game.playersVote.map(vote => {
+				return {
+					memeID: vote.memeID,
+					score: 0
+				}
+			});
+			console.log("Results ", results);
+			game.playersVote.forEach((sel) => {
+				results.find((res) => res.memeID == sel.memeID).score++;
+			})
+			log.info("Sending round score");
+			io.in(game.roomID).emit("display-score", results);
+			game.reset();
+			game.rounds++;
+		}
 	})
 
 	//Predefined event: disconnect

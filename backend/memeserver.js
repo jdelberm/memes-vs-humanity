@@ -64,7 +64,7 @@ io.on("connection", (socket) => {
 	log.info(`User connected. SID: ${socket.id}`);
 
 	//User joins a room and gets his uuid & room uuid
-	socket.on("user-join", (callback) => {
+	socket.on("user-join", () => {
 		let room = Array.from(io.sockets.adapter.rooms).find(room => room[1].size ? room[1].size < _GAME_PLAYERS : true);
 		if (!room) {
 			log.info("There isn't any available room");
@@ -81,7 +81,7 @@ io.on("connection", (socket) => {
 			uuid: uuid.v4(),
 			roomID: room[0]
 		}
-		callback(player);
+		socket.emit("user-joined", player);
 	});
 
 	//4 memes are sent to the user
